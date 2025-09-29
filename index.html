@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="ja"> 
+<head>
+    <meta charset="UTF-8" />
+    <title>AHC Statistics</title> <style>
+        body { font-family: sans-serif; font-size: 14px; }
+        .error { color: red; }
+        pre {
+          background: #f5f5f5;
+          padding: 10px;
+          border-radius: 6px;
+          overflow-x: auto;
+          margin: 0;          /* 上下の余白を消す */
+        }
+        code {
+          font-family: monospace;
+        }
+        .code-block {
+          position: relative;  /* 親要素を基準にする */
+          background: #f5f5f5;
+          padding: 10px;
+          border-radius: 6px;
+          overflow-x: auto;
+          margin-bottom: 20px;
+          margin: 0;  /* 外側余白を消す */
+        }
+
+        .code-label {
+          position: absolute;  /* code-block 内での相対位置 */
+          top: 0;
+          right: 0;
+          background: #333;
+          color: white;
+          font-size: 0.75em;
+          padding: 2px 6px;
+          border-bottom-left-radius: 4px;
+        }
+    </style>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.js"></script>
+</head>
+<body>
+    <h1>AHC Statistics</h1>
+
+    <!--discription-->
+    <details>
+        <summary>description</summary>
+        AHCでテストケースを何ケースか実行した後のエラー出力の入ったフォルダ(公式ツールではtools/err)を読み込むと、それぞれのファイル中の"a:3"のような形を数値として読み取りグラフにしてくれます。
+        <div></div>例えばerrというフォルダに0000.txt 0001.txt 0002.txt があり
+        <div class="code-block"><div class="code-label">0000.txt</div><pre><code>a:4
+b:2</code></pre></div>
+と
+        <div class="code-block"><div class="code-label">0001.txt</div><pre><code>a:3
+b:3</code></pre></div>
+ と       <div class="code-block"><div class="code-label">0002.txt</div><pre><code>a:2
+b:4</code></pre></div>
+        とありPlot Dotsモードでvar1に"a"、var2に"b"と入力すると、散布図として(2,4) (3,3) (4,2) がプロットされます。
+        <br><br>
+        <div class="code-block"><div class="code-label">0000.txt</div><pre><code>list:3 2 1</code></pre></div>
+と
+<div class="code-block"><div class="code-label">0002.txt</div><pre><code>list:1 2 3</code></pre></div>
+        とありListモードでcasenameに"0 2"、listnameに"list"と入力すると、折れ線グラフとして(3,2,1) (1,2,3) がプロットされます。
+    </details>
+    <br>
+
+    <!--inputs-->
+    <label for="Mode">Mode : </label>
+    <select id = "Mode" name="Mode">
+        <option value = "Plot Dots">Plot Dots</option>
+        <option value = "List">List</option>
+    </select>
+    <input type="file" id="err_folder" webkitdirectory multiple>
+    <br><br>
+
+    <label id = "labvar1" for="vars">var 1 : </label>
+    <input type="text" id="var1" name="var1">
+    <label id = "labvar2" for="vars">var 2 : </label>
+    <input type="text" id="var2" name="var2">
+
+    <label id = "labcase" for="vars">Case : </label>
+    <input type="text" id="casename" name="casename">
+    <label id = "lablist" for="vars">List : </label>
+    <input type="text" id="listname" name="listname">
+    <br>
+
+    <div class = "error" id = "error">Select a error folder</div>
+    <canvas id="chart" width="600" height="230"></canvas>
+
+
+    <script>
+        const Mode = document.getElementById('Mode');
+        const var1 = document.getElementById('var1');
+        const var2 = document.getElementById('var2');
+        const casename = document.getElementById('casename');
+        const listname = document.getElementById('listname');
+        const labvar1 = document.getElementById('labvar1');
+        const labvar2 = document.getElementById('labvar2');
+        const labcase = document.getElementById('labcase');
+        const lablist = document.getElementById('lablist');
+        const ctx = document.getElementById('chart').getContext('2d');
+        Mode.onchange = (e) => {
+            if (Mode.value == "Plot Dots") {
+                labvar1.style.display = "inline";
+                labvar2.style.display = "inline";
+                var1.style.display = "inline";
+                var2.style.display = "inline";
+                labcase.style.display = "none";
+                lablist.style.display = "none";
+                casename.style.display = "none";
+                listname.style.display = "none";
+
+            }
+            else {
+                labvar1.style.display = "none";
+                labvar2.style.display = "none";
+                var1.style.display = "none";
+                var2.style.display = "none";
+                labcase.style.display = "inline";
+                lablist.style.display = "inline";
+                casename.style.display = "inline";
+                listname.style.display = "inline";
+            }
+        }
+        Mode.onchange();
+        var variables = {
+        };
+        function randomColor(){
+            const r = Math.floor(Math.random() * 256);
+            const g = Math.floor(Math.random() * 256);
+            const b = Math.floor(Math.random() * 256);
+            return `rgb(${r},${g},${b})`;
+        }
+
+        document.getElementById("err_folder").onchange = async (e) => {
+            variables = {"#" : []};
+            const files = Array.from(e.target.files);
+            for (const file of files) {
+                if (!file.name.endsWith(".txt")) {
+                    document.getElementById("error").innerHTML = "Invalid file name format" ;
+                    return ;
+                }
+            }
+            files.sort((a,b) => a.name.localeCompare(b.name)) ;
+
+            const results = await Promise.all(files.map(file => {
+                return new Promise(resolve => {
+                    const reader = new FileReader();
+                    reader.onload = (ev) => resolve(ev.target.result);
+                    reader.readAsText(file);
+                });
+            }));
+            var file_cnt = 0 ;
+
+            for (const text of results) {
+                variables["#"].push(file_cnt) ; file_cnt ++ ;
+                const lines = text.split(/\r\n|\r|\n/);
+                for (let line of lines) {
+                    //split coron and space
+                    splcoron = line.trim().split(":");
+                    if (splcoron.length != 2) {
+                        continue ;
+                    }
+                    var name = splcoron[0].trim();
+                    if (!variables[name]) {
+                        variables[name] = [];
+                    }
+                    var values = splcoron[1].trim().split(" ").map(Number) ;
+                    if (values.length == 1) {
+                        variables[name].push(values[0]) ;
+                    }
+                    else {
+                        variables[name].push(values) ;
+                    }
+                }
+                file_cnt ++ ;
+            }
+
+            UpdateGraph();
+        };
+
+        var1.addEventListener('keyup', (e) => {
+            UpdateGraph();
+        })
+        var2.addEventListener('keyup', (e) => {
+            UpdateGraph() ;
+        })
+        casename.addEventListener('change', (e) => {
+            UpdateGraph();
+        })
+        listname.addEventListener('change', (e) => {
+            UpdateGraph();
+        })
+        Mode.addEventListener('change', (e) => {
+            UpdateGraph();
+        })
+
+
+        function UpdateGraph() {
+            if (Mode.value == "Plot Dots") {
+                PlotDots(var1.value, var2.value);
+            }
+            else {
+                PlotList(casename.value.trim().split(" "), listname.value);
+            }
+        }
+
+        function PlotDots(var1 , var2) {
+            if (window.myScatter) {
+                window.myScatter.destroy() ;
+            }
+            if (window.myLine) {
+                window.myLine.destroy() ;
+            }
+            if (!variables[var1]) {
+                document.getElementById("error").innerHTML = "No such variable: '" + String(var1) + "'" ;
+                return ;
+            }
+            if (!variables[var2]) {
+                document.getElementById("error").innerHTML = "No such variable: '" + String(var2) + "'" ;
+                return ;
+            }
+            if (variables[var1].length != variables[var2].length) {
+                document.getElementById("error").innerHTML = "Size of '" + String(var1) + "' and '" + String(var2) + "' are different" ;
+                return ;
+            }
+            document.getElementById("error").innerHTML = "" ;
+
+            var data = {
+                datasets:[{
+                    label: `${var1} and ${var2}`,
+                    data: variables[var1].map((x, i) => ({x: x, y: variables[var2][i]})),
+                    backgroundColor: randomColor(),
+                    radius: 4
+                }]
+            };
+            
+            window.myScatter = new Chart(ctx, {
+                data: data,
+                type: 'scatter',
+                options: {
+                    tooltips: {
+                        callbacks: {
+                            label: function(tooltipItem, data) {
+                                const index = tooltipItem.index; // 点の番号
+                                const x = tooltipItem.xLabel;
+                                const y = tooltipItem.yLabel;
+                                return `Case ${index}: (${x}, ${y})`;
+                            }
+                        }
+                    },
+                    responsive: true,
+                    scales: {
+                        x: { type: 'linear', title: { display: true, text: var1 } },
+                        y: { title: { display: true, text: var2 } }
+                    }
+                }
+            });
+        }
+        function PlotList(cases, listName) {
+            if (cases.length == 0) {
+                document.getElementById("error").innerHTML = "At least one case is required" ;
+                return ;
+            }
+            if (!variables[listName]) {
+                document.getElementById("error").innerHTML = "No such variable :  '" + String(listName) + "'" ;
+                return;
+            }
+
+            const allSeries = [];
+            let count_dots = 0 ;
+            for(let x of cases) {
+                if (variables[listName].length <= x || x < 0) {
+                    document.getElementById("error").innerHTML = "Case " + String(x) + " is out of range" ;
+                    return;
+                }
+                count_dots += variables[listName][x].length;
+                allSeries.push(variables[listName][x]);
+            }
+            if (count_dots > 12000) {
+                if (!confirm(`Number of dots is ${count_dots}. Continue?`)) {
+                    return;
+                }
+            }
+
+            if (window.myLine) {
+                window.myLine.destroy();
+            }
+            if (window.myScatter) {
+                window.myScatter.destroy();
+            }
+
+            const datasets = allSeries.map((arr, idx) => {
+                return {
+                    label: `Case ${cases[idx]}`,
+                    data: arr,
+                    borderColor: randomColor(),
+                    fill: false,
+                    lineTension: 0
+                };
+            });
+
+            window.myLine = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: allSeries[0].map((_, i) => i+1),
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        xAxes: [{
+                            scaleLabel: { display: true, labelString: "Index" }
+                        }],
+                        yAxes: [{
+                            scaleLabel: { display: true, labelString: "Value" }
+                        }]
+                    },
+                    tooltips: {
+                        callbacks: {
+                            label: function(tooltipItem, data) {
+                                return `${data.datasets[tooltipItem.datasetIndex].label}: ${tooltipItem.yLabel}`;
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+    </script>
+</body>
+</html>
