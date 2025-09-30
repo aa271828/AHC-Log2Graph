@@ -132,7 +132,7 @@ b:4</code></pre></div>
         }
 
         document.getElementById("err_folder").onchange = async (e) => {
-            variables = {"#" : []};
+            variables = {};
             const files = Array.from(e.target.files);
             for (const file of files) {
                 if (!file.name.endsWith(".txt")) {
@@ -149,10 +149,9 @@ b:4</code></pre></div>
                     reader.readAsText(file);
                 });
             }));
-            var file_cnt = 0 ;
 
+            variables["#"] = [...Array(results.length).keys()];
             for (const text of results) {
-                variables["#"].push(file_cnt) ; file_cnt ++ ;
                 const lines = text.split(/\r\n|\r|\n/);
                 for (let line of lines) {
                     //split coron and space
@@ -172,7 +171,6 @@ b:4</code></pre></div>
                         variables[name].push(values) ;
                     }
                 }
-                file_cnt ++ ;
             }
 
             UpdateGraph();
