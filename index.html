@@ -10,23 +10,23 @@
           padding: 10px;
           border-radius: 6px;
           overflow-x: auto;
-          margin: 0;          /* 上下の余白を消す */
+          margin: 0;
         }
         code {
           font-family: monospace;
         }
         .code-block {
-          position: relative;  /* 親要素を基準にする */
+          position: relative;
           background: #f5f5f5;
           padding: 10px;
           border-radius: 6px;
           overflow-x: auto;
           margin-bottom: 20px;
-          margin: 0;  /* 外側余白を消す */
+          margin: 0;
         }
 
         .code-label {
-          position: absolute;  /* code-block 内での相対位置 */
+          position: absolute;
           top: 0;
           right: 0;
           background: #333;
@@ -65,29 +65,30 @@ b:4</code></pre></div>
 
     <!--inputs-->
     <label for="Mode">Mode : </label>
-    <select id = "Mode" name="Mode">
-        <option value = "Plot Dots">Plot Dots</option>
-        <option value = "List">List</option>
+    <select id="Mode" name="Mode">
+        <option value="Plot Dots">Plot Dots</option>
+        <option value="List">List</option>
     </select>
-    <label for="err_folder">Folder : </label>
-    <input type="file" id="err_folder" webkitdirectory multiple>
-    <input type="text" id="folder_name" placeholder="Folder name">
-    <button id="add_folder">Add Folder</button>
-    <div id="folder_list"></div>
     <br><br>
-
-    <label id = "labvar1" for="vars">var 1 : </label>
+    
+    <input type="file" id="err_folder" webkitdirectory multiple style="display:none;">
+    <button id="addFolder">フォルダ追加</button>
+    <div id="folderList"></div>
+    
+    <br>
+    
+    <label id="labvar1" for="vars">var 1 : </label>
     <input type="text" id="var1" name="var1">
-    <label id = "labvar2" for="vars">var 2 : </label>
+    <label id="labvar2" for="vars">var 2 : </label>
     <input type="text" id="var2" name="var2">
-
-    <label id = "labcase" for="vars">Case : </label>
+    
+    <label id="labcase" for="vars">Case : </label>
     <input type="text" id="casename" name="casename">
-    <label id = "lablist" for="vars">List : </label>
+    <label id="lablist" for="vars">List : </label>
     <input type="text" id="listname" name="listname">
     <br>
-
-    <div class = "error" id = "error">Select a error folder</div>
+    
+    <div class="error" id="error">Select a folder</div>
     <canvas id="chart" width="600" height="230"></canvas>
 
 
@@ -102,6 +103,15 @@ b:4</code></pre></div>
         const labcase = document.getElementById('labcase');
         const lablist = document.getElementById('lablist');
         const ctx = document.getElementById('chart').getContext('2d');
+        
+        const folderInput = document.getElementById("err_folder");
+        const addFolderBtn = document.getElementById("addFolder");
+        const folderListDiv = document.getElementById("folderList");
+
+        function error(context) {
+            document.getElementById('error').innerHTML = context ;
+        }
+        
         Mode.onchange = (e) => {
             if (Mode.value == "Plot Dots") {
                 labvar1.style.display = "inline";
@@ -112,7 +122,6 @@ b:4</code></pre></div>
                 lablist.style.display = "none";
                 casename.style.display = "none";
                 listname.style.display = "none";
-
             }
             else {
                 labvar1.style.display = "none";
@@ -124,28 +133,39 @@ b:4</code></pre></div>
                 casename.style.display = "inline";
                 listname.style.display = "inline";
             }
+            UpdateGraph();
         }
         Mode.onchange();
-        var variables = {
-        };
+        var variables_data = {};
         function randomColor(){
             const r = Math.floor(Math.random() * 256);
             const g = Math.floor(Math.random() * 256);
             const b = Math.floor(Math.random() * 256);
             return `rgb(${r},${g},${b})`;
         }
-
-        document.getElementById("err_folder").onchange = async (e) => {
-            variables = {};
+        
+        addFolderBtn.onclick = () => {
+            folderInput.value = "";
+            folderInput.click();
+        };
+        
+        folderInput.onchange = async (e) => {
+            const folderName = window.prompt("フォルダ名を入力してください。","folder" + String(Object.keys(variables_data).length + 1));
+            if (!folderName) {
+                error("Enter a folder name.");
+                return;
+            }
             const files = Array.from(e.target.files);
+            if (files.length === 0) return;
+
+            //txtかどうか
             for (const file of files) {
                 if (!file.name.endsWith(".txt")) {
-                    document.getElementById("error").innerHTML = "Invalid file name format" ;
-                    return ;
+                    error(`Invalid file type: ${file.name}. Only .txt files are allowed.`);
+                    return;
                 }
             }
-            files.sort((a,b) => a.name.localeCompare(b.name)) ;
-
+        
             const results = await Promise.all(files.map(file => {
                 return new Promise(resolve => {
                     const reader = new FileReader();
@@ -153,21 +173,20 @@ b:4</code></pre></div>
                     reader.readAsText(file);
                 });
             }));
-
+        
+            let variables = {};
             variables["#"] = [];
             for (let fileIndex = 0; fileIndex < results.length; fileIndex++) {
                 const text = results[fileIndex];
                 variables["#"].push(fileIndex);
-            
+        
                 const lines = text.split(/\r\n|\r|\n/);
                 for (let line of lines) {
                     let splcoron = line.trim().split(":");
                     if (splcoron.length != 2) continue;
-                    var name = splcoron[0].trim();
-                    if (!variables[name]) {
-                        variables[name] = [];
-                    }
-                    var values = splcoron[1].trim().split(" ").map(Number);
+                    let name = splcoron[0].trim();
+                    if (!variables[name]) variables[name] = [];
+                    let values = splcoron[1].trim().split(" ").map(Number);
                     if (values.length == 1) {
                         variables[name].push(values[0]);
                     } else {
@@ -175,158 +194,161 @@ b:4</code></pre></div>
                     }
                 }
             }
-
-
+        
+            variables_data[folderName] = variables;
+        
+            renderFolderCheckboxes();
+        
             UpdateGraph();
         };
-
-        var1.addEventListener('keyup', (e) => {
+        
+        // チェックボックス描画
+        function renderFolderCheckboxes() {
+            folderListDiv.innerHTML = "";
+            for (let fname in variables_data) {
+                const id = "chk_" + fname;
+                const div = document.createElement("div");
+                div.innerHTML = `
+                    <input type="checkbox" id="${id}" checked>
+                    <label for="${id}">${fname}</label>
+                `;
+                folderListDiv.appendChild(div);
+        
+                document.getElementById(id).addEventListener("change", UpdateGraph);
+            }
+        }
+        var1.onchange = function() {
             UpdateGraph();
-        })
-        var2.addEventListener('keyup', (e) => {
-            UpdateGraph() ;
-        })
-        casename.addEventListener('change', (e) => {
+        }
+        var2.onchange = function() {
             UpdateGraph();
-        })
-        listname.addEventListener('change', (e) => {
+        }
+        casename.onchange = function() {
             UpdateGraph();
-        })
-        Mode.addEventListener('change', (e) => {
+        }
+        listname.onchange = function() {
             UpdateGraph();
-        })
-
+        }
 
         function UpdateGraph() {
             if (Mode.value == "Plot Dots") {
                 PlotDots(var1.value, var2.value);
-            }
-            else {
+            } else {
                 PlotList(casename.value.trim().split(" "), listname.value);
             }
         }
-
-        function PlotDots(var1 , var2) {
-            if (window.myScatter) {
-                window.myScatter.destroy() ;
-            }
-            if (window.myLine) {
-                window.myLine.destroy() ;
-            }
-            if (!variables[var1]) {
-                document.getElementById("error").innerHTML = "No such variable: '" + String(var1) + "'" ;
+        
+        function PlotDots(var1, var2) {
+            if (window.myScatter) window.myScatter.destroy();
+            if (window.myLine) window.myLine.destroy();
+            if (!var1 && !var2) {
+                error("var1 and var2 are required.") ;
                 return ;
             }
-            if (!variables[var2]) {
-                document.getElementById("error").innerHTML = "No such variable: '" + String(var2) + "'" ;
+            if (!var1) {
+                error("var1 is required.") ;
                 return ;
             }
-            if (variables[var1].length != variables[var2].length) {
-                document.getElementById("error").innerHTML = "Size of '" + String(var1) + "' and '" + String(var2) + "' are different" ;
+            if (!var2) {
+                error("var2 is required.") ;
                 return ;
             }
-            document.getElementById("error").innerHTML = "" ;
-
-            var data = {
-                datasets:[{
-                    label: `${var1} and ${var2}`,
+        
+            let datasets = [];
+            for (let fname in variables_data) {
+                const chk = document.getElementById("chk_" + fname);
+                if (!chk || !chk.checked) continue;
+        
+                const variables = variables_data[fname];
+                if (!variables[var1]){
+                    error('No such variable : "' + String(var1) + '".') ;
+                    return ;
+                }
+                if (!variables[var2]){
+                    error('No such variable : "' + String(var2) + '".') ;
+                    return ;
+                }
+                if (variables[var1].length != variables[var2].length){
+                    error(`Length of '${var1}' and '${var2}' do not match.`);
+                    return ;
+                }
+        
+                datasets.push({
+                    label: `${fname}: ${var1} vs ${var2}`,
                     data: variables[var1].map((x, i) => ({x: x, y: variables[var2][i]})),
                     backgroundColor: randomColor(),
                     radius: 4
-                }]
-            };
-            
-            window.myScatter = new Chart(ctx, {
-                data: data,
-                type: 'scatter',
-                options: {
-                    tooltips: {
-                        callbacks: {
-                            label: function(tooltipItem, data) {
-                                const index = tooltipItem.index; // 点の番号
-                                const x = tooltipItem.xLabel;
-                                const y = tooltipItem.yLabel;
-                                return `Case ${index}: (${x}, ${y})`;
-                            }
-                        }
-                    },
-                    responsive: true,
-                    scales: {
-                        x: { type: 'linear', title: { display: true, text: var1 } },
-                        y: { title: { display: true, text: var2 } }
-                    }
-                }
-            });
-        }
-        function PlotList(cases, listName) {
-            if (cases.length == 0) {
-                document.getElementById("error").innerHTML = "At least one case is required" ;
-                return ;
+                });
             }
-            if (!variables[listName]) {
-                document.getElementById("error").innerHTML = "No such variable :  '" + String(listName) + "'" ;
+        
+            if (datasets.length == 0) {
+                error("No valid dataset");
                 return;
             }
-
-            const allSeries = [];
-            let count_dots = 0 ;
-            for(let x of cases) {
-                if (variables[listName].length <= x || x < 0) {
-                    document.getElementById("error").innerHTML = "Case " + String(x) + " is out of range" ;
-                    return;
-                }
-                count_dots += variables[listName][x].length;
-                allSeries.push(variables[listName][x]);
-            }
-            if (count_dots > 12000) {
-                if (!confirm(`Number of dots is ${count_dots}. Continue?`)) {
-                    return;
-                }
-            }
-
-            if (window.myLine) {
-                window.myLine.destroy();
-            }
-            if (window.myScatter) {
-                window.myScatter.destroy();
-            }
-
-            const datasets = allSeries.map((arr, idx) => {
-                return {
-                    label: `Case ${cases[idx]}`,
-                    data: arr,
-                    borderColor: randomColor(),
-                    fill: false,
-                    lineTension: 0
-                };
+            error("");
+        
+            window.myScatter = new Chart(ctx, {
+                type: 'scatter',
+                data: { datasets },
+                options: { responsive: true }
             });
-
+        }
+        
+        function PlotList(cases, listName) {
+            if (window.myLine) window.myLine.destroy();
+            if (window.myScatter) window.myScatter.destroy();
+            if (!listName) {
+                error("listName is required.") ;
+                return ;
+            }
+        
+            let datasets = [];
+            for (let fname in variables_data) {
+                const chk = document.getElementById("chk_" + fname);
+                if (!chk || !chk.checked) continue;
+        
+                var variables = variables_data[fname];
+                if (!variables[listName]){
+                    error('No such variable : "' + String(listName) + '".') ;
+                    return ;
+                }
+                if (variables[listName].length == 1) {
+                    variables[listName] = [variables[listName]] ;
+                }
+        
+                const allSeries = [];
+                for (let x of cases) {
+                    if (variables[listName].length <= x || x < 0) continue;
+                    allSeries.push(variables[listName][x]);
+                }
+        
+                for (let idx=0; idx<allSeries.length; idx++) {
+                    datasets.push({
+                        label: `${fname} Case ${cases[idx]}`,
+                        data: allSeries[idx],
+                        borderColor: randomColor(),
+                        fill: false,
+                        lineTension: 0
+                    });
+                }
+            }
+        
+            if (datasets.length == 0) {
+                error("No valid dataset");
+                return;
+            }
+            error("");
+        
             window.myLine = new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: allSeries[0].map((_, i) => i+1),
-                    datasets: datasets
+                    labels: datasets[0].data.map((_, i) => i+1),
+                    datasets
                 },
-                options: {
-                    responsive: true,
-                    scales: {
-                        xAxes: [{
-                            scaleLabel: { display: true, labelString: "Index" }
-                        }],
-                        yAxes: [{
-                            scaleLabel: { display: true, labelString: "Value" }
-                        }]
-                    },
-                    tooltips: {
-                        callbacks: {
-                            label: function(tooltipItem, data) {
-                                return `${data.datasets[tooltipItem.datasetIndex].label}: ${tooltipItem.yLabel}`;
-                            }
-                        }
-                    }
-                }
+                options: { responsive: true }
             });
         }
+
 
     </script>
 </body>
