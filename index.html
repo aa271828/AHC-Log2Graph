@@ -69,7 +69,11 @@ b:4</code></pre></div>
         <option value = "Plot Dots">Plot Dots</option>
         <option value = "List">List</option>
     </select>
+    <label for="err_folder">Folder : </label>
     <input type="file" id="err_folder" webkitdirectory multiple>
+    <input type="text" id="folder_name" placeholder="Folder name">
+    <button id="add_folder">Add Folder</button>
+    <div id="folder_list"></div>
     <br><br>
 
     <label id = "labvar1" for="vars">var 1 : </label>
@@ -153,7 +157,7 @@ b:4</code></pre></div>
             variables["#"] = [];
             for (let fileIndex = 0; fileIndex < results.length; fileIndex++) {
                 const text = results[fileIndex];
-                variables["#"].push(fileIndex);   // ここでファイルごとに1回だけ push
+                variables["#"].push(fileIndex);
             
                 const lines = text.split(/\r\n|\r|\n/);
                 for (let line of lines) {
