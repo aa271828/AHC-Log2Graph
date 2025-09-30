@@ -150,28 +150,28 @@ b:4</code></pre></div>
                 });
             }));
 
-            variables["#"] = [...Array(results.length).keys()];
-            for (const text of results) {
+            variables["#"] = [];
+            for (let fileIndex = 0; fileIndex < results.length; fileIndex++) {
+                const text = results[fileIndex];
+                variables["#"].push(fileIndex);   // ここでファイルごとに1回だけ push
+            
                 const lines = text.split(/\r\n|\r|\n/);
                 for (let line of lines) {
-                    //split coron and space
-                    splcoron = line.trim().split(":");
-                    if (splcoron.length != 2) {
-                        continue ;
-                    }
+                    let splcoron = line.trim().split(":");
+                    if (splcoron.length != 2) continue;
                     var name = splcoron[0].trim();
                     if (!variables[name]) {
                         variables[name] = [];
                     }
-                    var values = splcoron[1].trim().split(" ").map(Number) ;
+                    var values = splcoron[1].trim().split(" ").map(Number);
                     if (values.length == 1) {
-                        variables[name].push(values[0]) ;
-                    }
-                    else {
-                        variables[name].push(values) ;
+                        variables[name].push(values[0]);
+                    } else {
+                        variables[name].push(values);
                     }
                 }
             }
+
 
             UpdateGraph();
         };
