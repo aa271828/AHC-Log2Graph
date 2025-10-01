@@ -10,7 +10,6 @@
         }
         .title {
             font-size: 2em ;
-            font-weight: bold;
             border: 1px solid #eee;
         }
         .error { color: red; }
@@ -173,7 +172,7 @@
     <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
 </head>
 <body>
-    <input value = "AHC Statistics" class = "title">
+    <input value = "AHC Log Visualizer" class = "title">
 
     <!--discription-->
     <details class = "detail">
@@ -206,7 +205,7 @@ b:4</code></pre></div>
             <br>
             
             <input type="file" id="err_folder" webkitdirectory multiple style="display:none;">
-            <button id="addFolder" class = "file">Add error files</button>
+            <button id="addFolder" class = "file">Upload log files</button>
             <br><br>
             <div id="folderList" class = "folderList"></div>
             
@@ -432,16 +431,8 @@ b:4</code></pre></div>
         function PlotDots(var1, var2) {
             if (window.myScatter) window.myScatter.destroy();
             if (window.myLine) window.myLine.destroy();
-            if (!var1 && !var2) {
-                error("var1 and var2 are required.") ;
-                return ;
-            }
-            if (!var1) {
-                error("var1 is required.") ;
-                return ;
-            }
-            if (!var2) {
-                error("var2 is required.") ;
+            if (!var1 || !var2) {
+                error ("Please select variables.") ;
                 return ;
             }
         
@@ -477,7 +468,7 @@ b:4</code></pre></div>
             }
         
             if (datasets.length == 0) {
-                error("No valid dataset");
+                error("No data available to plot.");
                 return;
             }
             error("");
@@ -493,7 +484,7 @@ b:4</code></pre></div>
             if (window.myLine) window.myLine.destroy();
             if (window.myScatter) window.myScatter.destroy();
             if (!listName) {
-                error("listName is required.") ;
+                error("Please select a list variable.") ;
                 return ;
             }
         
@@ -529,7 +520,7 @@ b:4</code></pre></div>
             }
         
             if (datasets.length == 0) {
-                error("No valid dataset");
+                error("No data available to plot.");
                 return;
             }
             error("");
