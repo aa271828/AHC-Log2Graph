@@ -3,7 +3,16 @@
 <head>
     <meta charset="UTF-8" />
     <title>AHC Statistics</title> <style>
-        body { font-family: sans-serif; font-size: 14px; }
+        body {
+            font-family: sans-serif;
+            font-size: 14px;
+            overflow: hidden;
+        }
+        .title {
+            font-size: 2em ;
+            font-weight: bold;
+            border: 1px solid #eee;
+        }
         .error { color: red; }
         pre {
           background: #f5f5f5;
@@ -37,7 +46,7 @@
         }
 
         .summary {
-          background: #f5f5f5;
+          background: #fff;
         }
         .summary:hover {
             background: #eee;
@@ -47,7 +56,7 @@
             display: flex;
             flex-direction: row;
             bottom: 0;
-            height: 82vh;
+            height: 100vh;
         }
         .setting {
             position: relative;
@@ -55,30 +64,31 @@
             width: 15vw ;
             font-size: 20px ;
             background: #ebfafc ;
+            border: 1px solid #ccc;
         }
         .div2 {
             flex: 3 ;
         }
         /*そのままだとchoices.jsのやつが切れる*/
-        .setting .choices {
-            width: 100%;       /* 親幅にフィットさせる */
-            max-width: 100%;
-            box-sizing: border-box; /* padding/border込みで幅を計算 */
-        }
         .setting .choices__inner {
-            width: 100%;
             box-sizing: border-box;
-            display: block;     /* inline-block だと縮むので block に */
         }
         .setting .tab-menu {
+            width: 96%;
+            padding: 0;
+            margin: 3px auto;
             list-style: none;
             display: flex;
+            gap: 10px;
         }
         .setting .tab-menu li {
+            flex: 1;
+            text-align: center;
             font-size: 1.3rem;
             padding: 0.5em 1em;
-            background: #ebfafc;
+            background: #fff;
             color: #0D47A1;
+            border: 1px solid #007bee;
             border-radius: 6px;
             cursor: pointer;
             transition: background 0.2s;
@@ -96,6 +106,7 @@
             padding: 0.5em 1em;
             border: 1px solid #90CAF9;
             background: #E3F2FD;
+            width: 100%;
             color: #0D47A1;
             border-radius: 6px;
             cursor: pointer;
@@ -144,6 +155,14 @@
             color: #fff;
         }
 
+        .inputbox {
+            background-color: #f9f9f9;
+            width: 100%;
+            box-sizing: border-box;
+            margin: 0 auto;
+            height: 40px;
+        }
+
         
 
     </style>
@@ -154,7 +173,7 @@
     <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
 </head>
 <body>
-    <h1>AHC Statistics</h1>
+    <input value = "AHC Statistics" class = "title">
 
     <!--discription-->
     <details class = "detail">
@@ -181,13 +200,13 @@ b:4</code></pre></div>
         <!--inputs-->
         <div id = "setting" class = "setting">
             <ul class = "tab-menu">
-                <li data-mode="Plot Dots" class="active">Scatter Plot</li>
+                <li data-mode="Plot Dots" class="active">Scatter plot</li>
                 <li data-mode="List">List</li>
             </ul>
             <br>
             
             <input type="file" id="err_folder" webkitdirectory multiple style="display:none;">
-            <button id="addFolder" class = "file">Add Folder</button>
+            <button id="addFolder" class = "file">Add error files</button>
             <br><br>
             <div id="folderList" class = "folderList"></div>
             
@@ -195,13 +214,12 @@ b:4</code></pre></div>
             <div id = "mode1">
                 <select type="text" id="var1" name="var1" class = "choices"></select>
                 <select type="text" id="var2" name="var2" class = "choices"></select>
-                <label class="line"><input type="checkbox" id = "line" class = "line-checkbox">Show Line</label>
+                <label class="line"><input type="checkbox" id = "line" class = "line-checkbox">Show line</label>
             </div>
             <div id = "mode2">
-                <label for="vars">Case : </label>
-                <input type="text" id="casename" name="casename">
-                <label for="vars">List : </label>
-                <input type="text" id="listname" name="listname">
+                <input type="text" id="casename" name="casename" class = "inputbox" placeholder = "0 1 2...">
+                <br><br>
+                <select type="text" id="listname" name="listname" class = "choices"></select>
             </div>
         </div>
         <br>
@@ -213,7 +231,7 @@ b:4</code></pre></div>
 
 
     <script>
-        let choicesVar1, choicesVar2;
+        let choicesVar1, choicesVar2, choicesListname ;
         
         window.addEventListener('DOMContentLoaded', () => {
             choicesVar1 = new Choices('#var1', {
@@ -226,6 +244,11 @@ b:4</code></pre></div>
                 removeItemButton: true,
                 searchEnabled: true,
                 placeholderValue: 'y-axis...',
+            });
+            choicesListname = new Choices('#listname', {
+                removeItemButton: true,
+                searchEnabled: true,
+                placeholderValue: 'list...',
             });
         });
 
@@ -352,6 +375,7 @@ b:4</code></pre></div>
         function updateElementofVars() {
             var tmp1 = var1.value ;
             var tmp2 = var2.value ;
+            var tmp3 = listname.value ;
             var variableNameList = new Set();
         
             for (let fname in variables_data) {
@@ -373,6 +397,10 @@ b:4</code></pre></div>
             choicesVar2.clearStore();
             choicesVar2.setChoices(items, 'value', 'label', true);
             choicesVar2.setChoiceByValue(tmp2) ;
+
+            choicesListname.clearStore();
+            choicesListname.setChoices(items, 'value', 'label', true);
+            choicesListname.setChoiceByValue(tmp3) ;
 
         }
 
