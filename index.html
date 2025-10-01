@@ -45,17 +45,21 @@
 
         .container{
             display: flex;
+            flex-direction: row;
+            bottom: 0;
+            height: 82vh;
         }
         .setting {
+            position: relative;
             flex: 1;
             width: 15vw ;
-            height: 80vh;
             font-size: 20px ;
             background: #ebfafc ;
         }
         .div2 {
             flex: 3 ;
         }
+        /*そのままだとchoices.jsのやつが切れる*/
         .setting .choices {
             width: 100%;       /* 親幅にフィットさせる */
             max-width: 100%;
@@ -66,13 +70,81 @@
             box-sizing: border-box;
             display: block;     /* inline-block だと縮むので block に */
         }
+        .setting .tab-menu {
+            list-style: none;
+            display: flex;
+        }
+        .setting .tab-menu li {
+            font-size: 1.3rem;
+            padding: 0.5em 1em;
+            background: #ebfafc;
+            color: #0D47A1;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .setting .tab-menu li:hover {
+            background: #bbdefb;
+        }
+        
+        .setting .tab-menu li.active {
+            background-color: #007bee;
+            color: white;
+        }
         .setting .file {
             font-size: 1rem;
+            padding: 0.5em 1em;
+            border: 1px solid #90CAF9;
+            background: #E3F2FD;
+            color: #0D47A1;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
         }
-        .setting .Mode {
-            font-size: 1rem;
+        
+        .setting .file:hover {
+            background: #bbdefb;
         }
 
+        .setting .folderList {
+            background: #f5f5f5;
+            height: 150px ;
+            padding: 0.5em 1em;
+            border: 1px solid #ccc;
+            background: #eee;
+            border-radius: 6px;
+            overflow-y: auto;
+        }
+
+        .setting .folderList input {
+            transform: scale(1.5);
+            accent-color: #0096c7;
+        }
+
+        .setting .line {
+            font-size: 1rem;
+            padding: 0.5em 1em;
+            border: 1px solid #90CAF9;
+            background: #E3F2FD;
+            color: #0D47A1;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .setting .line:hover {
+            background: #bbdefb;
+        }
+        .setting .line-checkbox {
+            width: 0px;
+            height: 0px;
+            opacity: 0;
+        }
+        .setting .line:has(input:checked) {
+            background-color: #007bee;
+            color: #fff;
+        }
+
+        
 
     </style>
 
@@ -96,7 +168,7 @@ b:2</code></pre></div>
 b:3</code></pre></div>
  と       <div class="code-block"><div class="code-label">0002.txt</div><pre><code>a:2
 b:4</code></pre></div>
-        とありPlot Dotsモードでvar1に"a"、var2に"b"と入力すると、散布図として(2,4) (3,3) (4,2) がプロットされます。
+        とありPlot Dotsモードでx_axisに"a"、y_axisに"b"と入力すると、散布図として(2,4) (3,3) (4,2) がプロットされます。
         <br><br>
         <div class="code-block"><div class="code-label">0000.txt</div><pre><code>list:3 2 1</code></pre></div>
 と
@@ -105,30 +177,32 @@ b:4</code></pre></div>
     </details>
     <br>
 
-    <!--inputs-->
     <div class = "container">
+        <!--inputs-->
         <div id = "setting" class = "setting">
-            <label for="Mode">Mode : </label>
-            <select id="Mode" name="Mode" class="Mode">
-                <option value="Plot Dots">Plot Dots</option>
-                <option value="List">List</option>
-            </select>
-            <br><br>
+            <ul class = "tab-menu">
+                <li data-mode="Plot Dots" class="active">Scatter Plot</li>
+                <li data-mode="List">List</li>
+            </ul>
+            <br>
             
             <input type="file" id="err_folder" webkitdirectory multiple style="display:none;">
-            <button id="addFolder" class = "file">フォルダ追加</button>
-            <div id="folderList"></div>
+            <button id="addFolder" class = "file">Add folder</button>
+            <br><br>
+            <div id="folderList" class = "folderList"></div>
             
             <br>
-            <label id="labvar1" for="vars">var 1 : </label>
-            <select type="text" id="var1" name="var1" class = "choices"></select>
-            <label id="labvar2" for="vars">var 2 : </label>
-            <select type="text" id="var2" name="var2" class = "choices"></select>
-            
-            <label id="labcase" for="vars">Case : </label>
-            <input type="text" id="casename" name="casename">
-            <label id="lablist" for="vars">List : </label>
-            <input type="text" id="listname" name="listname">
+            <div id = "mode1">
+                <select type="text" id="var1" name="var1" class = "choices"></select>
+                <select type="text" id="var2" name="var2" class = "choices"></select>
+                <label class="line"><input type="checkbox" id = "line" class = "line-checkbox">Show Line</label>
+            </div>
+            <div id = "mode2">
+                <label for="vars">Case : </label>
+                <input type="text" id="casename" name="casename">
+                <label for="vars">List : </label>
+                <input type="text" id="listname" name="listname">
+            </div>
         </div>
         <br>
         <div class = "div2">
@@ -145,26 +219,22 @@ b:4</code></pre></div>
             choicesVar1 = new Choices('#var1', {
                 removeItemButton: true,
                 searchEnabled: true,
-                placeholderValue: 'Select var1...',
+                placeholderValue: 'x-axis...',
             });
         
             choicesVar2 = new Choices('#var2', {
                 removeItemButton: true,
                 searchEnabled: true,
-                placeholderValue: 'Select var2...',
+                placeholderValue: 'y-axis...',
             });
         });
 
+        var mode = "Plot Dots" ;
         
-        const Mode = document.getElementById('Mode');
         const var1 = document.getElementById('var1');
         const var2 = document.getElementById('var2');
         const casename = document.getElementById('casename');
         const listname = document.getElementById('listname');
-        const labvar1 = document.getElementById('labvar1');
-        const labvar2 = document.getElementById('labvar2');
-        const labcase = document.getElementById('labcase');
-        const lablist = document.getElementById('lablist');
         const ctx = document.getElementById('chart').getContext('2d');
         
         const folderInput = document.getElementById("err_folder");
@@ -174,31 +244,30 @@ b:4</code></pre></div>
         function error(context) {
             document.getElementById('error').innerHTML = context ;
         }
+
+        const tabs = document.querySelectorAll('.setting .tab-menu li');
+
+        tabs.forEach((tab , index) => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(t => t.classList.remove('active')) ;
+                tab.classList.add('active') ;
+                mode = tab.dataset.mode ;
+                modeChange() ;
+            });
+        });
         
-        Mode.onchange = (e) => {
-            if (Mode.value == "Plot Dots") {
-                labvar1.style.display = "inline";
-                labvar2.style.display = "inline";
-                var1.style.display = "inline";
-                var2.style.display = "inline";
-                labcase.style.display = "none";
-                lablist.style.display = "none";
-                casename.style.display = "none";
-                listname.style.display = "none";
+        function modeChange() {
+            if (mode == "Plot Dots") {
+                document.getElementById("mode1").style.display = "inline";
+                document.getElementById("mode2").style.display = "none" ;
             }
             else {
-                labvar1.style.display = "none";
-                labvar2.style.display = "none";
-                var1.style.display = "none";
-                var2.style.display = "none";
-                labcase.style.display = "inline";
-                lablist.style.display = "inline";
-                casename.style.display = "inline";
-                listname.style.display = "inline";
+                document.getElementById("mode1").style.display = "none";
+                document.getElementById("mode2").style.display = "inline" ;
             }
             UpdateGraph();
         }
-        Mode.onchange();
+        modeChange() ;
         var variables_data = {};
         function randomColor(){
             const r = Math.floor(Math.random() * 256);
@@ -273,9 +342,8 @@ b:4</code></pre></div>
                 const id = "chk_" + fname;
                 const div = document.createElement("div");
                 div.innerHTML = `
-                    <input type="checkbox" id="${id}" checked>
-                    <label for="${id}">${fname}</label>
-                `;
+                    <label for="${id}"><input type="checkbox" id="${id}" checked> ${fname}</label>
+`;
                 folderListDiv.appendChild(div);
         
                 document.getElementById(id).addEventListener("change", UpdateGraph);
@@ -321,9 +389,12 @@ b:4</code></pre></div>
         listname.onchange = function() {
             UpdateGraph();
         }
+        document.getElementById("line").onchange = function() {
+            UpdateGraph();
+        }
 
         function UpdateGraph() {
-            if (Mode.value == "Plot Dots") {
+            if (mode == "Plot Dots") {
                 PlotDots(var1.value, var2.value);
             } else {
                 PlotList(casename.value.trim().split(" "), listname.value);
@@ -364,12 +435,16 @@ b:4</code></pre></div>
                     error(`Length of '${var1}' and '${var2}' do not match.`);
                     return ;
                 }
-        
+
+                let ranc = randomColor() ;
                 datasets.push({
                     label: `${fname}: ${var1} vs ${var2}`,
                     data: variables[var1].map((x, i) => ({x: x, y: variables[var2][i]})),
-                    backgroundColor: randomColor(),
-                    radius: 4
+                    backgroundColor: ranc,
+                    radius: 4,
+                    showLine: document.getElementById("line").checked,
+                    borderColor: ranc,
+                    fill: false,
                 });
             }
         
