@@ -1,9 +1,9 @@
-#AHC-Log2Graph
-##概要
+# AHC-Log2Graph
+## 概要
 AHCでテストケースを何ケースか実行した後のエラー出力の入ったフォルダ(公式ツールではtools/err)を読み込むと、それぞれのファイル中の"a:3"のような形を数値として読み取りグラフにしてくれます。
-##URL
+## URL
 https://shika-kashi.github.io/AHC-Log2Graph/
-##使用例
+## 使用例
 errというフォルダに0000.txt 0001.txt 0002.txt があり
 0000.txtに
 ```
