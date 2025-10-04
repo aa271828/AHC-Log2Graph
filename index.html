@@ -173,27 +173,6 @@
 <body>
     <input value = "AHC Log2Graph" class = "title">
 
-    <!--discription-->
-    <details class = "detail">
-        <summary class = "summary">description</summary>
-        AHCでテストケースを何ケースか実行した後のエラー出力の入ったフォルダ(公式ツールではtools/err)を読み込むと、それぞれのファイル中の"a:3"のような形を数値として読み取りグラフにしてくれます。
-        <div></div>例えばerrというフォルダに0000.txt 0001.txt 0002.txt があり
-        <div class="code-block"><div class="code-label">0000.txt</div><pre><code>a:4
-b:2</code></pre></div>
-と
-        <div class="code-block"><div class="code-label">0001.txt</div><pre><code>a:3
-b:3</code></pre></div>
- と       <div class="code-block"><div class="code-label">0002.txt</div><pre><code>a:2
-b:4</code></pre></div>
-        とありPlot Dotsモードでx_axisに"a"、y_axisに"b"と入力すると、散布図として(2,4) (3,3) (4,2) がプロットされます。
-        <br><br>
-        <div class="code-block"><div class="code-label">0000.txt</div><pre><code>list:3 2 1</code></pre></div>
-と
-<div class="code-block"><div class="code-label">0002.txt</div><pre><code>list:1 2 3</code></pre></div>
-        とありListモードでcasenameに"0 2"、listnameに"list"と入力すると、折れ線グラフとして(3,2,1) (1,2,3) がプロットされます。
-    </details>
-    <br>
-
     <div class = "container">
         <!--inputs-->
         <div id = "setting" class = "setting">
